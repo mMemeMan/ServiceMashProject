@@ -1,6 +1,4 @@
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Scanner;
 
 public class Manager {
     public static void main(String[] args) {
@@ -68,6 +66,4 @@ public class Manager {
         System.out.println("PostAgent started.");
         return Agent;
     }
-
-
 }

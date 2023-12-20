@@ -1,11 +1,19 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
+import java.util.Properties;
 
 public class ClientHandler implements Runnable {
     private final Socket clientSocket;
+    private static Properties properties;
+
+    static {
+        properties = new Properties();
+        try (InputStream input = new FileInputStream("config.properties")) {
+            properties.load(input);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public ClientHandler(Socket socket) {
         this.clientSocket = socket;
@@ -58,7 +66,10 @@ public class ClientHandler implements Runnable {
         if (requestParts.length > 1) {
             String fileName = requestParts[1];
 
-            try (Socket downloadFileSocket = new Socket("localhost", 9004);
+            String fileServiceIp = properties.getProperty("file.service.ip");
+            int fileServicePort = Integer.parseInt(properties.getProperty("file.service.port"));
+
+            try (Socket downloadFileSocket = new Socket(fileServiceIp, fileServicePort);
                  PrintWriter out = new PrintWriter(downloadFileSocket.getOutputStream(), true);
                  BufferedReader in = new BufferedReader(new InputStreamReader(downloadFileSocket.getInputStream()))) {
 
@@ -82,11 +93,15 @@ public class ClientHandler implements Runnable {
     }
 
 
+
     private void handlerUploadFile(String[] requestParts, PrintWriter output) {
         if (requestParts.length > 1) {
             String filePath = requestParts[1];
 
-            try (Socket uploadFileSocket = new Socket("localhost", 9004);
+            String fileServiceIp = properties.getProperty("file.service.ip");
+            int fileServicePort = Integer.parseInt(properties.getProperty("file.service.port"));
+
+            try (Socket uploadFileSocket = new Socket(fileServiceIp, fileServicePort);
                  PrintWriter out = new PrintWriter(uploadFileSocket.getOutputStream(), true);
                  BufferedReader in = new BufferedReader(new InputStreamReader(uploadFileSocket.getInputStream()))) {
 
@@ -109,10 +124,11 @@ public class ClientHandler implements Runnable {
         }
     }
 
-
     private void handlerReadPosts(PrintWriter output) {
-        // Sending the request to read posts to PostService through ApiGateway
-        try (Socket readPostsSocket = new Socket("localhost", 9003);
+        String fileServiceIp = properties.getProperty("post.service.ip");
+        int fileServicePort = Integer.parseInt(properties.getProperty("post.service.port"));
+
+        try (Socket readPostsSocket = new Socket(fileServiceIp, fileServicePort);
              PrintWriter out = new PrintWriter(readPostsSocket.getOutputStream(), true);
              BufferedReader in = new BufferedReader(new InputStreamReader(readPostsSocket.getInputStream()))) {
 
@@ -130,16 +146,19 @@ public class ClientHandler implements Runnable {
     }
 
 
-    private void handleWritePost(String request) {
-        try (Socket writePostSocket = new Socket("localhost", 9003);
-             PrintWriter out = new PrintWriter(writePostSocket.getOutputStream(), true);
-             BufferedReader input = new BufferedReader(new InputStreamReader(writePostSocket.getInputStream()))) {
+    private void handleRegistration(String[] requestParts) {
+        String login = requestParts[1];
+        String password = requestParts[2];
 
-            out.println(request);
+        String fileServiceIp = properties.getProperty("registration.service.ip");
+        int fileServicePort = Integer.parseInt(properties.getProperty("registration.service.port"));
+        try {
+            Socket registrationSocket = new Socket(fileServiceIp, fileServicePort);
+            PrintWriter out = new PrintWriter(registrationSocket.getOutputStream(), true);
 
-            String response = input.readLine();
-            PrintWriter toClient = new PrintWriter(clientSocket.getOutputStream(), true);
-            toClient.println(response);
+            out.println(login + "|" + password);
+
+            registrationSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -149,7 +168,10 @@ public class ClientHandler implements Runnable {
         String login = requestParts[1];
         String password = requestParts[2];
 
-        try (Socket loginSocket = new Socket("localhost", 9002);
+        String fileServiceIp = properties.getProperty("login.service.ip");
+        int fileServicePort = Integer.parseInt(properties.getProperty("login.service.port"));
+
+        try (Socket loginSocket = new Socket(fileServiceIp, fileServicePort);
              PrintWriter out = new PrintWriter(loginSocket.getOutputStream(), true);
              BufferedReader input = new BufferedReader(new InputStreamReader(loginSocket.getInputStream()))) {
 
@@ -170,17 +192,19 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void handleRegistration(String[] requestParts) {
-        String login = requestParts[1];
-        String password = requestParts[2];
+    private void handleWritePost(String request) {
+        String fileServiceIp = properties.getProperty("post.service.ip");
+        int fileServicePort = Integer.parseInt(properties.getProperty("post.service.port"));
 
-        try {
-            Socket registrationSocket = new Socket("localhost", 9001);
-            PrintWriter out = new PrintWriter(registrationSocket.getOutputStream(), true);
+        try (Socket writePostSocket = new Socket(fileServiceIp, fileServicePort);
+             PrintWriter out = new PrintWriter(writePostSocket.getOutputStream(), true);
+             BufferedReader input = new BufferedReader(new InputStreamReader(writePostSocket.getInputStream()))) {
 
-            out.println(login + "|" + password);
+            out.println(request);
 
-            registrationSocket.close();
+            String response = input.readLine();
+            PrintWriter toClient = new PrintWriter(clientSocket.getOutputStream(), true);
+            toClient.println(response);
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -174,7 +174,6 @@ public class UserInterface {
 
         String request = "WRITE_POST|" + postContent + "|" + login;
 
-        // Establishing connection with ApiGateway and sending the request
         try (Socket socket = new Socket("localhost", 9000);
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
 
@@ -212,7 +211,6 @@ public class UserInterface {
 
         String request = "DOWNLOAD_FILE|" + fileName;
 
-        // Establishing connection with ApiGateway and sending the request
         try (Socket socket = new Socket("localhost", 9000);
              BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
