@@ -1,18 +1,27 @@
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Properties;
 
 public class ApiGateway {
     private ServerSocket serverSocket;
-    private boolean isRunning;
+    private static Properties properties;
 
-    public ApiGateway() {
-        isRunning = false;
+    static {
+        properties = new Properties();
+        try (InputStream input = new FileInputStream("config.properties")) {
+            properties.load(input);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void startServer() {
+        int apiGatewayPort = Integer.parseInt(properties.getProperty("api.gateway.port"));
         try {
-            serverSocket = new ServerSocket(9000);
+            serverSocket = new ServerSocket(apiGatewayPort);
             System.out.println("Server started. Waiting for connections...");
 
             while (true) {

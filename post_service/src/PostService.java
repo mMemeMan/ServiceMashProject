@@ -1,17 +1,26 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.*;
+import java.util.Properties;
 
-public class PostService {
+public class PostService implements Service{
     private ServerSocket serverSocket;
+    private static Properties properties;
+
+    static {
+        properties = new Properties();
+        try (InputStream input = new FileInputStream("config.properties")) {
+            properties.load(input);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public void startService() {
+        int servicePort = Integer.parseInt(properties.getProperty("post.service.port"));
         try {
-            serverSocket = new ServerSocket(9003);
+            serverSocket = new ServerSocket(servicePort);
 
             System.out.println("Post service started. Waiting for connections...");
 
@@ -27,10 +36,8 @@ public class PostService {
                         String request = input.readLine();
                         System.out.println("Received post request: " + request);
 
-                        // Splitting the request into parts
                         String[] requestParts = request.split("\\|");
 
-                        // Handle requests based on their types
                         if (requestParts.length > 0) {
                             String requestType = requestParts[0];
 
@@ -60,9 +67,9 @@ public class PostService {
     }
 
     private void handleReadPosts(PrintWriter output) {
-        String url = "jdbc:mysql://localhost/projekt";
-        String usernameDB = "root";
-        String passwordDB = "";
+        String url = properties.getProperty("database.url");
+        String usernameDB = properties.getProperty("database.username");
+        String passwordDB = properties.getProperty("database.password");
 
         try (Connection connection = DriverManager.getConnection(url, usernameDB, passwordDB)) {
             String query = "SELECT users.username, posts.content, posts.tstamp FROM posts " +
@@ -91,9 +98,9 @@ public class PostService {
 
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 
-        String url = "jdbc:mysql://localhost/projekt";
-        String usernameDB = "root";
-        String passwordDB = "";
+        String url = properties.getProperty("database.url");
+        String usernameDB = properties.getProperty("database.username");
+        String passwordDB = properties.getProperty("database.password");
 
         try (Connection connection = DriverManager.getConnection(url, usernameDB, passwordDB)) {
             String userIdQuery = "SELECT id FROM users WHERE username=?";

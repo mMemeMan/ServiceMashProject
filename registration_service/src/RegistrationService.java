@@ -1,21 +1,30 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Properties;
 
 
-public class RegistrationService {
+public class RegistrationService implements Service{
     private ServerSocket serverSocket;
-    private boolean isRunning;
+    private static Properties properties;
+
+    static {
+        properties = new Properties();
+        try (InputStream input = new FileInputStream("config.properties")) {
+            properties.load(input);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public void startService() {
+        int servicePort = Integer.parseInt(properties.getProperty("registration.service.port"));
         try {
-            serverSocket = new ServerSocket(9001);
+            serverSocket = new ServerSocket(servicePort);
             System.out.println("Registration service started. Waiting for connections...");
 
             while (true) {
@@ -44,13 +53,12 @@ public class RegistrationService {
     }
 
     private void handleRegistration(String[] requestParts) {
-            String login = requestParts[0];
-            String password = requestParts[1];
+        String login = requestParts[0];
+        String password = requestParts[1];
 
-
-        String url = "jdbc:mysql://localhost/projekt";
-        String usernameDB = "root";
-        String passwordDB = "";
+        String url = properties.getProperty("database.url");
+        String usernameDB = properties.getProperty("database.username");
+        String passwordDB = properties.getProperty("database.password");
 
         try (Connection connection = DriverManager.getConnection(url, usernameDB, passwordDB)) {
             String insertQuery = "INSERT INTO users (username, password) VALUES (?, ?)";

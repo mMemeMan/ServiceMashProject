@@ -1,18 +1,30 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Properties;
 
-public class FileService {
+public class FileService implements Service{
     private ServerSocket serverSocket;
     private boolean isRunning;
+    private static Properties properties;
+
+    static {
+        properties = new Properties();
+        try (InputStream input = new FileInputStream("config.properties")) {
+            properties.load(input);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public FileService() {
         isRunning = false;
     }
 
     public void startService() {
+        int fileServicePort = Integer.parseInt(properties.getProperty("file.service.port"));
         try {
-            serverSocket = new ServerSocket(9004);
+            serverSocket = new ServerSocket(fileServicePort);
             isRunning = true;
             System.out.println("FileService started. Waiting for connections...");
 

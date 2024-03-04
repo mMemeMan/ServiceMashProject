@@ -1,17 +1,25 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
+import java.util.Properties;
 import java.util.Scanner;
 
 public class UserInterface {
     private String login;
     private Scanner scanner;
+    private static Properties properties;
+
+    static {
+        properties = new Properties();
+        try (InputStream input = new FileInputStream("config.properties")) {
+            properties.load(input);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public UserInterface() {
         scanner = new Scanner(System.in);
-        login = "qwe";
+        login = "";
     }
 
     public void start() {
@@ -21,14 +29,14 @@ public class UserInterface {
 
             switch (choice) {
                 case "1":
-                    if (!login.equals("")) {
+                    if (login.equals("")) {
                         register();
                     } else {
                         System.out.println("You are already logged in.");
                     }
                     break;
                 case "2":
-                    if (!login.equals("")) {
+                    if (login.equals("")) {
                         login();
                     } else {
                         System.out.println("You are already logged in.");
@@ -73,7 +81,16 @@ public class UserInterface {
 
     private void displayMenu() {
         System.out.println();
-        System.out.println("Choose an option:");
+
+        String chooseOption = "Choose an option";
+        if (login != null) {
+            if (!login.equals("")) chooseOption += "(" + login + ")";
+        } else {
+            chooseOption += "(Need sign in)";
+        }
+        chooseOption += ": ";
+
+        System.out.println(chooseOption);
         System.out.println("1. Registration");
         System.out.println("2. Login");
         System.out.println("3. Write Post");
@@ -95,7 +112,10 @@ public class UserInterface {
 
         String request = "UPLOAD_FILE|" + filePath;
 
-        try (Socket socket = new Socket("localhost", 9000);
+        String apiGatewayIp = properties.getProperty("api.gateway.ip");
+        int apiGatewayPort = Integer.parseInt(properties.getProperty("api.gateway.port"));
+
+        try (Socket socket = new Socket(apiGatewayIp, apiGatewayPort);
              BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
 
@@ -107,7 +127,6 @@ public class UserInterface {
             } else {
                 System.out.println("Failed to upload the file.");
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -125,7 +144,10 @@ public class UserInterface {
 //      String[] requestParts = request.split("\\|");
         String request = "REGISTER|" + login + "|" + password;
 
-        try (Socket socket = new Socket("localhost", 9000);
+        String apiGatewayIp = properties.getProperty("api.gateway.ip");
+        int apiGatewayPort = Integer.parseInt(properties.getProperty("api.gateway.port"));
+
+        try (Socket socket = new Socket(apiGatewayIp, apiGatewayPort);
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
 
             out.println(request);
@@ -148,7 +170,10 @@ public class UserInterface {
 
         String request = "LOGIN|" + login + "|" + password;
 
-        try (Socket socket = new Socket("localhost", 9000);
+        String apiGatewayIp = properties.getProperty("api.gateway.ip");
+        int apiGatewayPort = Integer.parseInt(properties.getProperty("api.gateway.port"));
+
+        try (Socket socket = new Socket(apiGatewayIp, apiGatewayPort);
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
              BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
@@ -174,11 +199,14 @@ public class UserInterface {
 
         String request = "WRITE_POST|" + postContent + "|" + login;
 
-        try (Socket socket = new Socket("localhost", 9000);
+        String apiGatewayIp = properties.getProperty("api.gateway.ip");
+        int apiGatewayPort = Integer.parseInt(properties.getProperty("api.gateway.port"));
+
+        try (Socket socket = new Socket(apiGatewayIp, apiGatewayPort);
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
 
             out.println(request);
-
+            System.out.println("Post write successful.");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -188,7 +216,10 @@ public class UserInterface {
     private void readPosts() {
         String request = "READ_POSTS";
 
-        try (Socket socket = new Socket("localhost", 9000);
+        String apiGatewayIp = properties.getProperty("api.gateway.ip");
+        int apiGatewayPort = Integer.parseInt(properties.getProperty("api.gateway.port"));
+
+        try (Socket socket = new Socket(apiGatewayIp, apiGatewayPort);
              BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
 
@@ -211,14 +242,16 @@ public class UserInterface {
 
         String request = "DOWNLOAD_FILE|" + fileName;
 
-        try (Socket socket = new Socket("localhost", 9000);
+        String apiGatewayIp = properties.getProperty("api.gateway.ip");
+        int apiGatewayPort = Integer.parseInt(properties.getProperty("api.gateway.port"));
+
+        try (Socket socket = new Socket(apiGatewayIp, apiGatewayPort);
              BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
 
             out.println(request);
             System.out.println("File download request sent to ApiGateway.");
 
-            // Reading the response from ApiGateway
             String response = input.readLine();
             if (response != null && response.equals("FILE_DOWNLOADED")) {
                 System.out.println("File downloaded successfully.");
@@ -230,7 +263,6 @@ public class UserInterface {
             e.printStackTrace();
         }
     }
-
 
     private void logout() {
         login = "";

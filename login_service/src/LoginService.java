@@ -1,7 +1,4 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.Connection;
@@ -9,13 +6,25 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Properties;
 
-public class LoginService {
+public class LoginService implements Service{
     private ServerSocket serverSocket;
+    private static Properties properties;
+
+    static {
+        properties = new Properties();
+        try (InputStream input = new FileInputStream("config.properties")) {
+            properties.load(input);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public void startService() {
+        int servicePort = Integer.parseInt(properties.getProperty("login.service.port"));
         try {
-            serverSocket = new ServerSocket(9002);
+            serverSocket = new ServerSocket(servicePort);
             System.out.println("Login service started. Waiting for connections...");
 
             while (true) {
@@ -50,9 +59,9 @@ public class LoginService {
         String login = requestParts[0];
         String password = requestParts[1];
 
-        String url = "jdbc:mysql://localhost/projekt";
-        String usernameDB = "root";
-        String passwordDB = "";
+        String url = properties.getProperty("database.url");
+        String usernameDB = properties.getProperty("database.username");
+        String passwordDB = properties.getProperty("database.password");
 
         try (Connection connection = DriverManager.getConnection(url, usernameDB, passwordDB)) {
             String selectQuery = "SELECT * FROM users WHERE username=? AND password=?";

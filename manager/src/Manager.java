@@ -10,31 +10,27 @@ public class Manager {
         agents.add(startLoginAgent());
         agents.add(startRegistrationAgent());
 
-//        Scanner scanner = new Scanner(System.in);
-//        System.out.println("Write stop to kill threads");
-//        while (scanner.nextLine().equals("stop")){
-//
-//        }
+        for (Thread agent : agents) {
+            try {
+                agent.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private static Thread startLoginAgent() {
-        Thread Agent = new Thread(() -> {
-            LoginService loginAgent = new LoginService();
-            loginAgent.startService();
-        });
-        Agent.start();
+        Agent agent = new Agent(new LoginService());
+        agent.start();
         System.out.println("LoginAgent started.");
-        return Agent;
+        return agent;
     }
 
     private static Thread startRegistrationAgent() {
-        Thread Agent = new Thread(() -> {
-            RegistrationService loginAgent = new RegistrationService();
-            loginAgent.startService();
-        });
-        Agent.start();
+        Agent agent = new Agent(new RegistrationService());
+        agent.start();
         System.out.println("RegistrationAgent started.");
-        return Agent;
+        return agent;
     }
 
     private static Thread startApiGateway() {
@@ -48,22 +44,16 @@ public class Manager {
     }
 
     private static Thread startFileAgent() {
-        Thread Agent = new Thread(() -> {
-            FileService fileAgent = new FileService();
-            fileAgent.startService();
-        });
-        Agent.start();
+        Agent agent = new Agent(new FileService());
+        agent.start();
         System.out.println("FileAgent started.");
-        return Agent;
+        return agent;
     }
 
     private static Thread startPostAgent() {
-        Thread Agent = new Thread(() -> {
-            PostService postAgent = new PostService();
-            postAgent.startService();
-        });
-        Agent.start();
+        Agent agent = new Agent(new PostService());
+        agent.start();
         System.out.println("PostAgent started.");
-        return Agent;
+        return agent;
     }
 }
